@@ -82,3 +82,9 @@ yarn-error.log
 
 # Agent Skills
 .agents/
+
+# Ignore large archive files (like Android emulator bugreports)
+*.zip
+
+# Ignore temporary schema files
+schema.sql
