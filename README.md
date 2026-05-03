@@ -71,4 +71,7 @@ npm run ios
 ```
 
 ---
-*Built with ❤️ .*
+*Built with ❤️ par [FARUKxKUN](https://github.com/FARUKxKUN)
+                        [Chatti Mohamed Rayen](https://github.com/rayenchatti)
+                        [Bouteraa Yassine](https://github.com/yassinebouteraa)
+.*
