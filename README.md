@@ -1,97 +1,74 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# 🎓 VeritasLearn
 
-# Getting Started
+> **Originally conceptualized for the IEEE ISIMA CS SBC OPSYNC Hackathon, VeritasLearn has been fully implemented into a production-ready mobile application.**
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+VeritasLearn is an intelligent, gamified mobile learning assistant designed to transform the way students approach education. By leveraging large language models with strict educational guardrails, it generates personalized, highly accurate study materials on-the-fly.
 
-## Step 1: Start Metro
+## 🌟 What It Does
+VeritasLearn turns any academic question into an interactive lesson. When a user asks a question, the AI generates a comprehensive "Study Pack" consisting of:
+- **Structured Lessons:** Clear, markdown-formatted explanations of the topic.
+- **Micro-Quizzes:** Auto-generated multiple-choice questions specifically tied to the lesson to test immediate comprehension.
+- **Flashcards:** Bite-sized summaries of key terms.
+- **Gamified Progression:** Users earn XP for passing quizzes, increasing their rank from "Seeker" to "Titan" on a competitive global leaderboard.
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## 🛑 The Problem It Solves
+Modern AI chatbots are incredibly powerful but heavily prone to **hallucinations** and **passive consumption**. Students often use them to cheat or get quick answers without actually learning.
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+VeritasLearn solves this by:
+1. **Enforcing Active Learning:** The AI won't just give you the answer; it generates a quiz you must pass to prove you understood the material.
+2. **Preventing Off-Topic Chat:** The system intelligently rejects non-academic prompts (like "write me a Python script" or "tell me a joke") to ensure the platform remains strictly for studying.
+3. **Cryptographic Anti-Cheating:** Client-side grading bypasses are prevented by securely signing correct quiz answers via the backend using HMAC-SHA256. 
 
-```sh
-# Using npm
-npm start
+## 🛠️ Tech Stack
+- **Frontend / Mobile Framework:** React Native (Bare Workflow) & TypeScript
+- **Backend & Database:** Supabase (PostgreSQL)
+- **Authentication:** Supabase Auth (with Secure Keychain Storage)
+- **Serverless Compute:** Deno Edge Functions (Supabase Functions)
+- **AI Engine:** Groq API running `llama-3.3-70b-versatile`
+- **Security:** Strict Row-Level Security (RLS) & Stateless HMAC-SHA256 Payload Signatures
 
-# OR using Yarn
-yarn start
+## 🚀 How to Run It Locally
+
+### Prerequisites
+- [Node.js](https://nodejs.org/en/) (v22+)
+- [React Native Environment Setup](https://reactnative.dev/docs/environment-setup) (Android Studio / Xcode)
+- A [Supabase](https://supabase.com/) project
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/rayenchatti/veritaslearn.git
+cd veritaslearn
 ```
 
-## Step 2: Build and run your app
+### 2. Install dependencies
+```bash
+npm install
+```
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+### 3. Environment Variables
+Create a `.env` file in the root directory and add your Supabase keys:
+```env
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-### Android
+*Note: The backend Edge Functions require a separate `.env` file with your `SUPABASE_SERVICE_ROLE_KEY` and `GROQ_API_KEY` when deploying to Supabase.*
 
-```sh
-# Using npm
+### 4. Run the App
+
+**For Android:**
+```bash
 npm run android
-
-# OR using Yarn
-yarn android
 ```
 
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
+**For iOS:**
+*(Mac only)*
+```bash
+cd ios
+pod install
+cd ..
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+---
+*Built with ❤️ .*
