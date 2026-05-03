@@ -1,15 +1,27 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Lock, AlertTriangle, Bot, User } from 'lucide-react-native';
+import { Bot, User, Brain, Copy, CheckCircle } from 'lucide-react-native';
+import { useStyles, useTheme } from '../../theme/ThemeContext';
 
 interface MessageBubbleProps {
     role: 'user' | 'assistant';
     content: string;
-    locked?: boolean;
-    onLockedClick?: () => void;
+    hasStudyData?: boolean;
+    quizCompleted?: boolean;
+    onTakeQuiz?: () => void;
+    onCopyAnswer?: () => void;
 }
 
-export function MessageBubble({ role, content, locked = false, onLockedClick }: MessageBubbleProps) {
+export function MessageBubble({
+    role,
+    content,
+    hasStudyData = false,
+    quizCompleted = false,
+    onTakeQuiz,
+    onCopyAnswer,
+}: MessageBubbleProps) {
+    const styles = useStyles(createStyles);
+    const { colors } = useTheme();
     const isUser = role === 'user';
 
     return (
@@ -19,29 +31,13 @@ export function MessageBubble({ role, content, locked = false, onLockedClick }: 
                 {isUser ? (
                     <User color="#ffffff" size={18} />
                 ) : (
-                    <Bot color="#4b5563" size={18} />
+                    <Bot color={colors.text} size={18} />
                 )}
             </View>
 
             {/* Message content */}
-            <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleAssistant]}>
-                {locked ? (
-                    <TouchableOpacity activeOpacity={0.8} onPress={onLockedClick} style={styles.lockedContainer}>
-                        {/* Fake Burred Text placeholder since true Blur is complex in bare RN without expo-blur */}
-                        <Text style={styles.blurredText} numberOfLines={3}>
-                            {content.slice(0, 150)}...
-                        </Text>
-                        
-                        <View style={styles.lockedOverlay}>
-                            <Lock color="#6366f1" size={24} style={styles.lockIcon} />
-                            <Text style={styles.lockedText}>Click to unlock</Text>
-                            <View style={styles.warningContainer}>
-                                <AlertTriangle color="#f59e0b" size={12} />
-                                <Text style={styles.warningText}>AI-generated content</Text>
-                            </View>
-                        </View>
-                    </TouchableOpacity>
-                ) : (
+            <View style={styles.bubbleWrapper}>
+                <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleAssistant]}>
                     <View>
                         {content.split('\n').map((line, i) => {
                             if (line.startsWith('**') && line.endsWith('**')) {
@@ -60,13 +56,45 @@ export function MessageBubble({ role, content, locked = false, onLockedClick }: 
                             );
                         })}
                     </View>
+                </View>
+
+                {/* Action buttons — shown below AI lesson messages */}
+                {!isUser && hasStudyData && (
+                    <View style={styles.actionRow}>
+                        {quizCompleted ? (
+                            <View style={styles.completedBadge}>
+                                <CheckCircle size={16} color={colors.successBorder} />
+                                <Text style={styles.completedText}>Quiz Completed ✓</Text>
+                            </View>
+                        ) : (
+                            <TouchableOpacity
+                                style={styles.quizBtn}
+                                activeOpacity={0.8}
+                                onPress={onTakeQuiz}
+                            >
+                                <Brain size={16} color="#ffffff" />
+                                <Text style={styles.quizBtnText}>Take Quiz</Text>
+                                <View style={styles.pointsPill}>
+                                    <Text style={styles.pointsPillText}>+50 pts</Text>
+                                </View>
+                            </TouchableOpacity>
+                        )}
+                        <TouchableOpacity
+                            style={styles.copyBtn}
+                            activeOpacity={0.8}
+                            onPress={onCopyAnswer}
+                        >
+                            <Copy size={16} color={colors.textMuted} />
+                            <Text style={styles.copyBtnText}>Copy</Text>
+                        </TouchableOpacity>
+                    </View>
                 )}
             </View>
         </View>
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     container: {
         flexDirection: 'row',
         gap: 12,
@@ -86,22 +114,25 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     avatarUser: {
-        backgroundColor: '#6366f1',
+        backgroundColor: colors.primaryHover,
     },
     avatarAssistant: {
-        backgroundColor: '#e5e7eb',
+        backgroundColor: colors.borderLight,
+    },
+    bubbleWrapper: {
+        maxWidth: '80%',
+        flexShrink: 1,
     },
     bubble: {
-        maxWidth: '80%',
         borderRadius: 16,
         paddingHorizontal: 16,
         paddingVertical: 12,
     },
     bubbleUser: {
-        backgroundColor: '#6366f1',
+        backgroundColor: colors.primaryHover,
     },
     bubbleAssistant: {
-        backgroundColor: '#f3f4f6',
+        backgroundColor: colors.background,
     },
     text: {
         fontSize: 16,
@@ -111,7 +142,7 @@ const styles = StyleSheet.create({
         color: '#ffffff',
     },
     textAssistant: {
-        color: '#111827',
+        color: colors.text,
     },
     boldText: {
         fontWeight: 'bold',
@@ -121,52 +152,80 @@ const styles = StyleSheet.create({
     },
     blockquote: {
         borderLeftWidth: 2,
-        borderLeftColor: '#a5b4fc',
+        borderLeftColor: colors.primary,
         paddingLeft: 12,
         fontStyle: 'italic',
-        color: '#4b5563',
+        color: colors.textMuted,
         marginVertical: 8,
     },
     emptyLine: {
         height: 8,
     },
-    lockedContainer: {
-        position: 'relative',
-        minHeight: 120,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    blurredText: {
-        color: '#9ca3af',
-        opacity: 0.5,
-    },
-    lockedOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(243, 244, 246, 0.85)',
-        borderRadius: 16,
-    },
-    lockIcon: {
-        marginBottom: 8,
-    },
-    lockedText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#111827',
-    },
-    warningContainer: {
+    // ── Action buttons row ──────────────────────────
+    actionRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        gap: 8,
         marginTop: 8,
+        paddingLeft: 4,
     },
-    warningText: {
-        fontSize: 12,
-        color: '#d97706',
+    quizBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.primaryHover,
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 20,
+        gap: 6,
+        shadowColor: colors.primaryHover,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    quizBtnText: {
+        color: '#ffffff',
+        fontWeight: '600',
+        fontSize: 13,
+    },
+    pointsPill: {
+        backgroundColor: 'rgba(255,255,255,0.25)',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 10,
+    },
+    pointsPillText: {
+        color: '#ffffff',
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+    copyBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.surface,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: colors.borderLight,
+        gap: 4,
+    },
+    copyBtnText: {
+        color: colors.textMuted,
+        fontSize: 13,
+    },
+    completedBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.successBg,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        gap: 6,
+    },
+    completedText: {
+        color: colors.successBorder,
+        fontSize: 13,
+        fontWeight: '600',
     },
 });

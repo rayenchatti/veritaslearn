@@ -1,5 +1,6 @@
 import React from 'react';
-import { Modal, View, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, ModalProps } from 'react-native';
+import { Modal, View, StyleSheet, TouchableOpacity, ModalProps } from 'react-native';
+import { useStyles } from '../../theme/ThemeContext';
 
 export interface DialogProps extends ModalProps {
     open?: boolean;
@@ -8,6 +9,7 @@ export interface DialogProps extends ModalProps {
 }
 
 export function Dialog({ open = false, onClose, children, ...props }: DialogProps) {
+    const styles = useStyles(createStyles);
     if (!open) return null;
 
     return (
@@ -33,18 +35,21 @@ export function Dialog({ open = false, onClose, children, ...props }: DialogProp
 }
 
 export function DialogContent({ children, style }: { children: React.ReactNode; style?: any }) {
+    const styles = useStyles(createStyles);
     return <View style={[styles.content, style]}>{children}</View>;
 }
 
 export function DialogHeader({ children }: { children: React.ReactNode }) {
+    const styles = useStyles(createStyles);
     return <View style={styles.header}>{children}</View>;
 }
 
 export function DialogTitle({ children }: { children: React.ReactNode }) {
+    const styles = useStyles(createStyles);
     return <View style={styles.title}>{children}</View>;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     overlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -54,7 +59,7 @@ const styles = StyleSheet.create({
     contentContainer: {
         width: '90%',
         maxHeight: '90%',
-        backgroundColor: '#ffffff',
+        backgroundColor: colors.surface,
         borderRadius: 16,
         overflow: 'hidden',
         elevation: 5,
@@ -72,7 +77,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#111827',
+        color: colors.text,
         marginBottom: 8,
     },
 });

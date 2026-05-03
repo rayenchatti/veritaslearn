@@ -79,6 +79,7 @@ export interface Message {
     unlocked?: boolean;
     humanizedContent?: string;
     studyData?: any;
+    quizCompleted?: boolean;
 }
 
 // Quiz types

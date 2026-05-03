@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { BookOpen, Lightbulb, FileText, CheckCircle } from 'lucide-react-native';
+import { useStyles, useTheme } from '../../theme/ThemeContext';
 
 export interface FlashcardType {
     id: string;
@@ -17,6 +18,8 @@ interface StudyMaterialsProps {
 
 function FlashcardItem({ card }: { card: FlashcardType }) {
     const [flipped, setFlipped] = useState(false);
+    const styles = useStyles(createStyles);
+
 
     return (
         <TouchableOpacity 
@@ -35,12 +38,15 @@ function FlashcardItem({ card }: { card: FlashcardType }) {
 }
 
 export function StudyMaterials({ topic, summary, keyPoints, flashcards }: StudyMaterialsProps) {
+    const styles = useStyles(createStyles);
+    const { colors } = useTheme();
+
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
             {/* Header */}
             <View style={styles.header}>
                 <View style={styles.unlockedPill}>
-                    <CheckCircle size={16} color="#15803d" />
+                    <CheckCircle size={16} color={colors.successBorder} />
                     <Text style={styles.unlockedText}>Study Materials Unlocked!</Text>
                 </View>
                 <Text style={styles.title}>{topic}</Text>
@@ -49,7 +55,7 @@ export function StudyMaterials({ topic, summary, keyPoints, flashcards }: StudyM
             {/* Summary card */}
             <View style={styles.card}>
                 <View style={[styles.cardHeader, styles.bgBlue]}>
-                    <BookOpen size={20} color="#2563eb" />
+                    <BookOpen size={20} color={colors.primary} />
                     <Text style={styles.cardTitle}>Summary</Text>
                 </View>
                 <View style={styles.cardContent}>
@@ -101,7 +107,7 @@ export function StudyMaterials({ topic, summary, keyPoints, flashcards }: StudyM
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     container: {
         maxHeight: '95%',
     },
@@ -116,7 +122,7 @@ const styles = StyleSheet.create({
     unlockedPill: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#dcfce7',
+        backgroundColor: colors.successBg,
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 20,
@@ -124,20 +130,20 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     unlockedText: {
-        color: '#15803d',
+        color: colors.successBorder, // e.g. #15803d
         fontWeight: 'bold',
     },
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#111827',
+        color: colors.text,
         textAlign: 'center',
     },
     card: {
-        backgroundColor: '#ffffff',
+        backgroundColor: colors.surface,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: '#e5e7eb',
+        borderColor: colors.borderLight,
         overflow: 'hidden',
         marginBottom: 24,
     },
@@ -147,19 +153,19 @@ const styles = StyleSheet.create({
         gap: 8,
         padding: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#f3f4f6',
+        borderBottomColor: colors.borderLight,
     },
-    bgBlue: { backgroundColor: '#eff6ff' },
-    bgYellow: { backgroundColor: '#fefce8' },
+    bgBlue: { backgroundColor: colors.surfaceHighlight }, // Map to suitable theme colors
+    bgYellow: { backgroundColor: colors.surfaceHighlight },
     cardTitle: {
         fontWeight: 'bold',
-        color: '#111827',
+        color: colors.text,
     },
     cardContent: {
         padding: 16,
     },
     summaryText: {
-        color: '#4b5563',
+        color: colors.textMuted,
         lineHeight: 24,
     },
     pointItem: {
@@ -172,7 +178,7 @@ const styles = StyleSheet.create({
         width: 24,
         height: 24,
         borderRadius: 12,
-        backgroundColor: '#6366f1',
+        backgroundColor: colors.primaryHover,
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 2,
@@ -184,7 +190,7 @@ const styles = StyleSheet.create({
     },
     pointText: {
         flex: 1,
-        color: '#111827',
+        color: colors.text,
         lineHeight: 22,
     },
     flashcardsSection: {
@@ -193,7 +199,7 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#111827',
+        color: colors.text,
         marginBottom: 16,
     },
     flashcardsList: {
@@ -215,12 +221,12 @@ const styles = StyleSheet.create({
         elevation: 3,
     },
     flashcardFront: {
-        backgroundColor: '#ffffff',
-        borderColor: '#e5e7eb',
+        backgroundColor: colors.surface,
+        borderColor: colors.borderLight,
     },
     flashcardBack: {
-        backgroundColor: '#4f46e5',
-        borderColor: '#4338ca',
+        backgroundColor: colors.primaryHover,
+        borderColor: colors.primary,
     },
     flashcardText: {
         fontSize: 16,
@@ -229,7 +235,7 @@ const styles = StyleSheet.create({
         lineHeight: 24,
     },
     flashcardTextFront: {
-        color: '#111827',
+        color: colors.text,
         fontWeight: '500',
     },
     flashcardTextBack: {
@@ -239,13 +245,13 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 16,
         fontSize: 12,
-        color: '#9ca3af',
+        color: colors.textMuted, // previously 9ca3af, fallback to textMuted
     },
     tipBox: {
         flexDirection: 'row',
-        backgroundColor: '#faf5ff',
+        backgroundColor: colors.surfaceHighlight, // usually light purple, map to highlight
         borderWidth: 1,
-        borderColor: '#f3e8ff',
+        borderColor: colors.borderLight,
         borderRadius: 16,
         padding: 16,
         gap: 12,
@@ -255,11 +261,11 @@ const styles = StyleSheet.create({
     },
     tipTitle: {
         fontWeight: 'bold',
-        color: '#581c87',
+        color: colors.primary, // instead of dark purple
         marginBottom: 4,
     },
     tipText: {
-        color: '#7e22ce',
+        color: colors.primary, // instead of lighter purple
         fontSize: 14,
         lineHeight: 20,
     },

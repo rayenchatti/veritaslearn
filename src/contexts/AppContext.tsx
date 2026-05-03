@@ -5,6 +5,9 @@ import { saveScore, loadScore, saveActivities, loadActivities } from '../utils/s
 import { DEMO_STATS } from '../utils/mockData';
 import { supabase } from '../services/supabase';
 import { fetchUserStats } from '../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const STORAGE_KEY = 'sb-nyrnbrvbmxyurejdorvm-auth-token';
 
 interface AppState {
     score: number;
@@ -54,9 +57,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 setActivities(loadedActivities as Activity[]);
 
                 // Try to load real stats from Supabase if logged in
-                const { data: { session } } = await supabase.auth.getSession();
-                if (session?.user?.id) {
-                    const serverStats = await fetchUserStats(session.user.id);
+                // Read session from AsyncStorage directly to avoid ES256 JWT crash
+                let userId: string | null = null;
+                try {
+                    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        userId = parsed?.user?.id ?? null;
+                    }
+                } catch {}
+
+                if (userId) {
+                    const serverStats = await fetchUserStats(userId);
                     if (serverStats) {
                         setStats(serverStats);
                         setScore(serverStats.totalXP ?? loadedScore);

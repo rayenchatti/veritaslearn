@@ -1,5 +1,6 @@
 import React, { forwardRef } from 'react';
-import { TouchableOpacity, Text, StyleSheet, TouchableOpacityProps, ViewStyle, TextStyle } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, TouchableOpacityProps } from 'react-native';
+import { useStyles } from '../../theme/ThemeContext';
 
 export interface ButtonProps extends TouchableOpacityProps {
     variant?: 'default' | 'secondary' | 'outline' | 'ghost';
@@ -9,6 +10,8 @@ export interface ButtonProps extends TouchableOpacityProps {
 
 export const Button = forwardRef<any, ButtonProps>(
     ({ variant = 'default', size = 'default', children, style: customStyle, ...props }, ref) => {
+        const styles = useStyles(createStyles);
+
         const getContainerStyle = (): any[] => {
             let style: any[] = [styles.base];
             switch (variant) {
@@ -65,6 +68,7 @@ export const Button = forwardRef<any, ButtonProps>(
                 ref={ref}
                 style={[getContainerStyle(), customStyle]}
                 activeOpacity={0.8}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 {...props}
             >
                 {typeof children === 'string' ? (
@@ -79,7 +83,7 @@ export const Button = forwardRef<any, ButtonProps>(
 
 Button.displayName = 'Button';
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     base: {
         justifyContent: 'center',
         alignItems: 'center',
@@ -87,36 +91,38 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
     },
     defaultVariant: {
-        backgroundColor: '#6366f1', // indigo-500
+        backgroundColor: colors.primaryHover, // or primary depending on interaction, primaryHover matches #6366f1 locally for button
     },
     secondaryVariant: {
-        backgroundColor: '#e0e7ff', // indigo-100
+        backgroundColor: colors.surfaceHighlight, 
     },
     outlineVariant: {
         backgroundColor: 'transparent',
         borderWidth: 1,
-        borderColor: '#6366f1',
+        borderColor: colors.primaryHover,
     },
     ghostVariant: {
         backgroundColor: 'transparent',
     },
     defaultSize: {
-        paddingVertical: 10,
+        paddingVertical: 12,
         paddingHorizontal: 16,
+        minHeight: 48,
     },
     smSize: {
-        paddingVertical: 6,
+        paddingVertical: 8,
         paddingHorizontal: 12,
         borderRadius: 6,
     },
     lgSize: {
-        paddingVertical: 14,
-        paddingHorizontal: 24,
+        paddingVertical: 16,
+        paddingHorizontal: 32,
         borderRadius: 12,
+        minHeight: 56,
     },
     iconSize: {
-        height: 40,
-        width: 40,
+        height: 48,
+        width: 48,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -125,12 +131,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     defaultText: {
-        color: '#ffffff',
+        color: '#ffffff', // Keep button text white for high contrast on primary colored button usually
     },
     secondaryText: {
-        color: '#4338ca', // indigo-700
+        color: colors.primary,
     },
     outlineText: {
-        color: '#6366f1', // indigo-500
+        color: colors.primaryHover,
     },
 });

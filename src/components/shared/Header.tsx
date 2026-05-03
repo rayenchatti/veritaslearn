@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useStyles } from '../../theme/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../contexts/AppContext';
 import { Flame } from 'lucide-react-native';
@@ -9,6 +10,8 @@ export function Header() {
     const insets = useSafeAreaInsets();
     const { score, tier, stats } = useApp();
     const tierConfig = getTierConfig(tier);
+    const styles = useStyles(createStyles);
+
 
     return (
         <View style={[styles.headerContainer, { paddingTop: insets.top }]}>
@@ -38,11 +41,11 @@ export function Header() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     headerContainer: {
-        backgroundColor: '#ffffff',
+        backgroundColor: colors.surface,
         borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
+        borderBottomColor: colors.border,
     },
     content: {
         flexDirection: 'row',
@@ -58,7 +61,7 @@ const styles = StyleSheet.create({
     logoText: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#4f46e5',
+        color: colors.primary,
     },
     scoreDisplayContainer: {
         flexDirection: 'row',
@@ -68,7 +71,7 @@ const styles = StyleSheet.create({
     streakContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fef2f2',
+        backgroundColor: colors.errorBg,
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 12,
@@ -76,7 +79,7 @@ const styles = StyleSheet.create({
     streakText: {
         marginLeft: 4,
         fontWeight: 'bold',
-        color: '#ef4444',
+        color: colors.error,
     },
     tierScoreContainer: {
         flexDirection: 'row',
@@ -89,11 +92,11 @@ const styles = StyleSheet.create({
     scoreText: {
         fontWeight: 'bold',
         fontSize: 14,
-        color: '#111827',
+        color: colors.text,
     },
     tierName: {
         fontSize: 10,
-        color: '#6b7280',
+        color: colors.textMuted,
         textTransform: 'uppercase',
     },
 });

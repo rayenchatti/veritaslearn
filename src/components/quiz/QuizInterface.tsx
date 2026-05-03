@@ -1,21 +1,28 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Question } from '../../types';
 import { Button } from '../ui/Button';
 import { CheckCircle, XCircle, ChevronRight, Clock } from 'lucide-react-native';
+import { useStyles, useTheme } from '../../theme/ThemeContext';
 
 interface QuizInterfaceProps {
     questions: Question[];
-    onComplete: (score: number, totalQuestions: number) => void;
+    onComplete: (score: number, totalQuestions: number, userAnswers: number[]) => void;
 }
 
 export function QuizInterface({ questions, onComplete }: QuizInterfaceProps) {
+    const styles = useStyles(createStyles);
+    const { colors } = useTheme();
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
     const [isAnswered, setIsAnswered] = useState(false);
     const [correctAnswers, setCorrectAnswers] = useState(0);
+    const [userAnswers, setUserAnswers] = useState<number[]>([]);
     const [timeLeft, setTimeLeft] = useState(questions[0]?.timeLimit || 30);
     const [timerActive, setTimerActive] = useState(true);
+
+    // Guard against double-firing onComplete (e.g. double-tap on See Results)
+    const hasCompletedRef = useRef(false);
 
     const currentQuestion = questions[currentIndex];
     const isCorrect = selectedAnswer === currentQuestion?.correctAnswer;
@@ -33,8 +40,11 @@ export function QuizInterface({ questions, onComplete }: QuizInterfaceProps) {
             return () => clearTimeout(timer);
         } else if (timerActive && timeLeft === 0) {
             handleTimeUp();
+            if (selectedAnswer === null) {
+              setUserAnswers(prev => [...prev, -1]); // -1 represents missed/timeout
+            }
         }
-    }, [timerActive, timeLeft, handleTimeUp]);
+    }, [timerActive, timeLeft, handleTimeUp, selectedAnswer]);
 
     if (!currentQuestion) return null;
 
@@ -50,6 +60,7 @@ export function QuizInterface({ questions, onComplete }: QuizInterfaceProps) {
 
         setIsAnswered(true);
         setTimerActive(false);
+        setUserAnswers(prev => [...prev, selectedAnswer]);
 
         if (selectedAnswer === currentQuestion.correctAnswer) {
             setCorrectAnswers(prev => prev + 1);
@@ -64,8 +75,10 @@ export function QuizInterface({ questions, onComplete }: QuizInterfaceProps) {
             setTimeLeft(questions[currentIndex + 1].timeLimit);
             setTimerActive(true);
         } else {
-            // Quiz complete
-            onComplete(correctAnswers, questions.length);
+            // Quiz complete — guard against double-tap
+            if (hasCompletedRef.current) return;
+            hasCompletedRef.current = true;
+            onComplete(correctAnswers, questions.length, userAnswers);
         }
     };
 
@@ -84,7 +97,7 @@ export function QuizInterface({ questions, onComplete }: QuizInterfaceProps) {
 
             {/* Timer */}
             <View style={styles.timerContainer}>
-                <Clock size={16} color={timeLeft < 10 ? '#ef4444' : '#6b7280'} />
+                <Clock size={16} color={timeLeft < 10 ? colors.error : colors.textMuted} />
                 <Text style={[styles.timerText, timeLeft < 10 && styles.timerTextDanger]}>
                     00:{timeLeft.toString().padStart(2, '0')}
                 </Text>
@@ -140,10 +153,10 @@ export function QuizInterface({ questions, onComplete }: QuizInterfaceProps) {
                                 <Text style={[textStyle, { flex: 1 }]}>{option}</Text>
                                 
                                 {isAnswered && isCorrectAnswer && (
-                                    <CheckCircle size={20} color="#22c55e" />
+                                    <CheckCircle size={20} color={colors.success} />
                                 )}
                                 {isAnswered && isSelected && !isCorrectAnswer && (
-                                    <XCircle size={20} color="#ef4444" />
+                                    <XCircle size={20} color={colors.error} />
                                 )}
                             </TouchableOpacity>
                         );
@@ -157,12 +170,12 @@ export function QuizInterface({ questions, onComplete }: QuizInterfaceProps) {
                     <View style={styles.explanationHeader}>
                         {isCorrect ? (
                             <>
-                                <CheckCircle size={20} color="#16a34a" />
+                                <CheckCircle size={20} color={colors.success} />
                                 <Text style={styles.explanationTitleCorrect}>Correct!</Text>
                             </>
                         ) : (
                             <>
-                                <XCircle size={20} color="#dc2626" />
+                                <XCircle size={20} color={colors.error} />
                                 <Text style={styles.explanationTitleWrong}>
                                     {selectedAnswer === null ? "Time's up!" : 'Incorrect'}
                                 </Text>
@@ -194,7 +207,7 @@ export function QuizInterface({ questions, onComplete }: QuizInterfaceProps) {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     container: {
         padding: 20,
     },
@@ -211,21 +224,21 @@ const styles = StyleSheet.create({
     },
     progressTextMain: {
         fontWeight: '500',
-        color: '#111827',
+        color: colors.text,
     },
     progressTextSub: {
-        color: '#6b7280',
+        color: colors.textMuted,
         fontSize: 12,
     },
     progressBarBg: {
         height: 8,
-        backgroundColor: '#e5e7eb',
+        backgroundColor: colors.borderLight,
         borderRadius: 4,
         overflow: 'hidden',
     },
     progressBarFill: {
         height: '100%',
-        backgroundColor: '#6366f1',
+        backgroundColor: colors.primaryHover,
     },
     timerContainer: {
         flexDirection: 'row',
@@ -235,14 +248,14 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     timerText: {
-        color: '#4b5563',
+        color: colors.textMuted,
         fontWeight: 'bold',
     },
     timerTextDanger: {
-        color: '#ef4444',
+        color: colors.error,
     },
     questionCard: {
-        backgroundColor: '#f9fafb',
+        backgroundColor: colors.surfaceHighlight,
         borderRadius: 16,
         padding: 16,
         marginBottom: 16,
@@ -250,7 +263,7 @@ const styles = StyleSheet.create({
     questionText: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#111827',
+        color: colors.text,
         marginBottom: 16,
     },
     optionsContainer: {
@@ -262,21 +275,21 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: 12,
         borderWidth: 2,
-        borderColor: '#e5e7eb',
-        backgroundColor: '#ffffff',
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
         gap: 12,
     },
     optionSelectedBg: {
-        borderColor: '#6366f1',
-        backgroundColor: '#eef2ff',
+        borderColor: colors.primaryHover,
+        backgroundColor: colors.surfaceHighlight,
     },
     optionCorrectBg: {
-        borderColor: '#22c55e',
-        backgroundColor: '#f0fdf4',
+        borderColor: colors.success,
+        backgroundColor: colors.successBg,
     },
     optionWrongBg: {
-        borderColor: '#ef4444',
-        backgroundColor: '#fef2f2',
+        borderColor: colors.error,
+        backgroundColor: colors.errorBg,
     },
     optionDisabled: {
         opacity: 0.6,
@@ -285,26 +298,26 @@ const styles = StyleSheet.create({
         width: 32,
         height: 32,
         borderRadius: 16,
-        backgroundColor: '#f3f4f6',
+        backgroundColor: colors.borderLight, // equivalent to f3f4f6 originally
         justifyContent: 'center',
         alignItems: 'center',
     },
-    bgSelected: { backgroundColor: '#6366f1' },
-    bgCorrect: { backgroundColor: '#22c55e' },
-    bgWrong: { backgroundColor: '#ef4444' },
+    bgSelected: { backgroundColor: colors.primaryHover },
+    bgCorrect: { backgroundColor: colors.success },
+    bgWrong: { backgroundColor: colors.error },
     letterText: {
         fontSize: 14,
         fontWeight: 'bold',
-        color: '#4b5563',
+        color: colors.textMuted,
     },
-    textWhite: { color: '#ffffff' },
+    textWhite: { color: '#ffffff' }, // typically want to maintain high contrast with the primary background
     optionText: {
         fontSize: 15,
-        color: '#374151',
+        color: colors.text,
     },
-    textSelected: { color: '#4338ca' },
-    textCorrect: { color: '#15803d' },
-    textWrong: { color: '#b91c1c' },
+    textSelected: { color: colors.primary },
+    textCorrect: { color: colors.successBorder },
+    textWrong: { color: colors.errorBorder },
     explanationBox: {
         padding: 16,
         borderRadius: 12,
@@ -312,12 +325,12 @@ const styles = StyleSheet.create({
         borderWidth: 1,
     },
     explanationBoxCorrect: {
-        backgroundColor: '#f0fdf4',
-        borderColor: '#bbf7d0',
+        backgroundColor: colors.successBg,
+        borderColor: colors.successBorder,
     },
     explanationBoxWrong: {
-        backgroundColor: '#fef2f2',
-        borderColor: '#fecaca',
+        backgroundColor: colors.errorBg,
+        borderColor: colors.errorBorder,
     },
     explanationHeader: {
         flexDirection: 'row',
@@ -327,15 +340,15 @@ const styles = StyleSheet.create({
     },
     explanationTitleCorrect: {
         fontWeight: 'bold',
-        color: '#15803d',
+        color: colors.successBorder, // dark green
     },
     explanationTitleWrong: {
         fontWeight: 'bold',
-        color: '#b91c1c',
+        color: colors.errorBorder, // dark red
     },
     explanationText: {
         fontSize: 14,
-        color: '#4b5563',
+        color: colors.textMuted,
     },
     actionsContainer: {
         flexDirection: 'row',

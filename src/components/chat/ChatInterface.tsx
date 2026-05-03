@@ -1,18 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native';
 import { useApp } from '../../contexts/AppContext';
 import { MessageBubble } from './MessageBubble';
 import { Button } from '../ui/Button';
 import { Send, Trash2 } from 'lucide-react-native';
 import { generateStudyDataSecure } from '../../services/api';
 import { Message } from '../../types';
+import { useStyles, useTheme } from '../../theme/ThemeContext';
 
 interface ChatInterfaceProps {
-  onOpenGate: (messageId: string) => void;
+  onTakeQuiz: (messageId: string) => void;
+  onCopyAnswer: (messageId: string) => void;
 }
 
-export function ChatInterface({ onOpenGate }: ChatInterfaceProps) {
+export function ChatInterface({ onTakeQuiz, onCopyAnswer }: ChatInterfaceProps) {
   const { messages, addMessage, clearMessages } = useApp();
+  const styles = useStyles(createStyles);
+  const { colors } = useTheme();
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -25,31 +29,35 @@ export function ChatInterface({ onOpenGate }: ChatInterfaceProps) {
     scrollToBottom();
   }, [messages]);
 
+
+
   const handleSubmit = async () => {
     if (!input.trim() || isLoading) return;
+
+    const currentInput = input.trim();
+
+
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input.trim(),
+      content: currentInput,
       locked: false,
       timestamp: new Date(),
     };
 
     addMessage(userMessage);
-    const currentInput = input.trim();
     setInput('');
     setIsLoading(true);
 
     try {
-      // Use the topic as the input itself (AI extracts topic from the question)
       const response = await generateStudyDataSecure(currentInput, currentInput);
 
       const assistantMessage: Message = {
         id: Date.now().toString(),
         role: 'assistant',
         content: response.answer,
-        locked: true,
+        locked: false, // Answer is immediately visible — lesson first!
         timestamp: new Date(),
         humanizedContent: response.humanized,
         studyData: response,
@@ -57,13 +65,10 @@ export function ChatInterface({ onOpenGate }: ChatInterfaceProps) {
 
       addMessage(assistantMessage);
     } catch (error: any) {
-      const isAccessError = error?.message?.includes('Quiz not passed');
       const errorMessage: Message = {
         id: Date.now().toString(),
         role: 'assistant',
-        content: isAccessError
-          ? '🔒 You need to pass the comprehension quiz for this topic before the AI can respond.'
-          : `Sorry, I couldn't process that. ${error?.message ?? 'Please try again.'}`,
+        content: error?.message || 'Sorry, I couldn\'t process that. Please try again.',
         locked: false,
         timestamp: new Date(),
       };
@@ -73,8 +78,11 @@ export function ChatInterface({ onOpenGate }: ChatInterfaceProps) {
     }
   };
 
+  const handleCopyMessage = (messageId: string) => {
+    onCopyAnswer(messageId);
+  };
 
-    const suggestedQuestions = ['Explain photosynthesis', "Newton's First Law", 'What is gravity?'];
+  const suggestedQuestions = ['Explain photosynthesis', "Newton's First Law", 'What is gravity?'];
 
     return (
         <KeyboardAvoidingView 
@@ -91,7 +99,7 @@ export function ChatInterface({ onOpenGate }: ChatInterfaceProps) {
                     </View>
                     {messages.length > 0 && (
                         <TouchableOpacity style={styles.clearBtn} onPress={clearMessages}>
-                            <Trash2 size={16} color="#6b7280" />
+                            <Trash2 size={16} color={colors.textMuted} />
                             <Text style={styles.clearBtnText}>Clear</Text>
                         </TouchableOpacity>
                     )}
@@ -107,7 +115,7 @@ export function ChatInterface({ onOpenGate }: ChatInterfaceProps) {
                     {messages.length === 0 ? (
                         <View style={styles.emptyState}>
                             <View style={styles.iconContainer}>
-                                <Send size={28} color="#6366f1" />
+                                <Send size={28} color={colors.primaryHover} />
                             </View>
                             <Text style={styles.emptyStateTitle}>Start a conversation</Text>
                             <Text style={styles.emptyStateText}>
@@ -130,9 +138,13 @@ export function ChatInterface({ onOpenGate }: ChatInterfaceProps) {
                             <MessageBubble
                                 key={message.id}
                                 role={message.role}
-                                content={message.unlocked ? (message.humanizedContent || message.content) : message.content}
-                                locked={message.role === 'assistant' && message.locked && !message.unlocked}
-                                onLockedClick={() => onOpenGate(message.id)}
+                                content={message.quizCompleted
+                                    ? (message.humanizedContent || message.content)
+                                    : message.content}
+                                hasStudyData={!!message.studyData}
+                                quizCompleted={message.quizCompleted ?? false}
+                                onTakeQuiz={() => onTakeQuiz(message.id)}
+                                onCopyAnswer={() => handleCopyMessage(message.id)}
                             />
                         ))
                     )}
@@ -140,10 +152,10 @@ export function ChatInterface({ onOpenGate }: ChatInterfaceProps) {
                     {isLoading && (
                         <View style={styles.loadingContainer}>
                             <View style={styles.loadingAvatar}>
-                                <ActivityIndicator size="small" color="#4b5563" />
+                                <ActivityIndicator size="small" color={colors.textMuted} />
                             </View>
                             <View style={styles.loadingBubble}>
-                                <Text style={styles.loadingText}>Thinking...</Text>
+                                <Text style={styles.loadingText}>Generating lesson...</Text>
                             </View>
                         </View>
                     )}
@@ -156,7 +168,7 @@ export function ChatInterface({ onOpenGate }: ChatInterfaceProps) {
                         value={input}
                         onChangeText={setInput}
                         placeholder="Ask a question..."
-                        placeholderTextColor="#9ca3af"
+                        placeholderTextColor={colors.textMuted}
                         editable={!isLoading}
                         onSubmitEditing={handleSubmit}
                     />
@@ -174,17 +186,17 @@ export function ChatInterface({ onOpenGate }: ChatInterfaceProps) {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     container: {
         flex: 1,
     },
     chatBoxContainer: {
         flex: 1,
-        backgroundColor: '#f9fafb',
+        backgroundColor: colors.background,
         borderRadius: 16,
         overflow: 'hidden',
         borderWidth: 1,
-        borderColor: '#e5e7eb',
+        borderColor: colors.border,
         marginHorizontal: 16,
         marginBottom: 16,
     },
@@ -194,18 +206,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 16,
         paddingVertical: 12,
-        backgroundColor: '#ffffff',
+        backgroundColor: colors.surface,
         borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
+        borderBottomColor: colors.border,
     },
     headerTitle: {
         fontWeight: '600',
         fontSize: 16,
-        color: '#111827',
+        color: colors.text,
     },
     headerSubtitle: {
         fontSize: 12,
-        color: '#6b7280',
+        color: colors.textMuted,
     },
     clearBtn: {
         flexDirection: 'row',
@@ -216,7 +228,7 @@ const styles = StyleSheet.create({
     },
     clearBtnText: {
         fontSize: 14,
-        color: '#6b7280',
+        color: colors.textMuted,
     },
     messagesArea: {
         flex: 1,
@@ -235,7 +247,7 @@ const styles = StyleSheet.create({
         width: 64,
         height: 64,
         borderRadius: 32,
-        backgroundColor: '#e0e7ff',
+        backgroundColor: colors.surfaceHighlight,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 16,
@@ -243,12 +255,12 @@ const styles = StyleSheet.create({
     emptyStateTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#111827',
+        color: colors.text,
         marginBottom: 8,
     },
     emptyStateText: {
         fontSize: 14,
-        color: '#6b7280',
+        color: colors.textMuted,
         textAlign: 'center',
         marginBottom: 24,
     },
@@ -261,14 +273,14 @@ const styles = StyleSheet.create({
     suggestionBtn: {
         paddingHorizontal: 12,
         paddingVertical: 8,
-        backgroundColor: '#ffffff',
+        backgroundColor: colors.surface,
         borderWidth: 1,
-        borderColor: '#e5e7eb',
+        borderColor: colors.borderLight,
         borderRadius: 16,
     },
     suggestionText: {
         fontSize: 12,
-        color: '#374151',
+        color: colors.text,
     },
     loadingContainer: {
         flexDirection: 'row',
@@ -280,36 +292,37 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 18,
-        backgroundColor: '#e5e7eb',
+        backgroundColor: colors.borderLight,
         justifyContent: 'center',
         alignItems: 'center',
     },
     loadingBubble: {
-        backgroundColor: '#f3f4f6',
+        backgroundColor: colors.background,
         borderRadius: 16,
         paddingHorizontal: 16,
         paddingVertical: 12,
     },
     loadingText: {
-        color: '#6b7280',
+        color: colors.textMuted,
         fontSize: 14,
     },
     inputContainer: {
         flexDirection: 'row',
         padding: 16,
-        backgroundColor: '#ffffff',
+        backgroundColor: colors.surface,
         borderTopWidth: 1,
-        borderTopColor: '#e5e7eb',
+        borderTopColor: colors.borderLight,
         gap: 12,
     },
     input: {
         flex: 1,
         height: 44,
-        backgroundColor: '#ffffff',
+        backgroundColor: colors.surface,
         borderWidth: 1,
-        borderColor: '#e5e7eb',
+        borderColor: colors.borderLight,
         borderRadius: 12,
         paddingHorizontal: 16,
         fontSize: 16,
+        color: colors.text,
     },
 });

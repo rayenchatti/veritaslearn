@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { Dialog, DialogContent } from '../ui/Dialog';
+import { Dialog } from '../ui/Dialog';
 import { Button } from '../ui/Button';
 import { Copy, Brain, X, Check, Star, FileText, Zap } from 'lucide-react-native';
+import { useStyles, useTheme } from '../../theme/ThemeContext';
 
 interface ComprehensionGateProps {
     open: boolean;
@@ -12,6 +13,9 @@ interface ComprehensionGateProps {
 }
 
 export function ComprehensionGate({ open, onClose, onCopy, onLearn }: ComprehensionGateProps) {
+    const styles = useStyles(createStyles);
+    const { colors } = useTheme();
+
     return (
         <Dialog open={open} onClose={onClose}>
             <View style={styles.container}>
@@ -33,14 +37,14 @@ export function ComprehensionGate({ open, onClose, onCopy, onLearn }: Comprehens
 
                         <View style={styles.cardContent}>
                             <View style={styles.iconContainerGreen}>
-                                <Brain size={28} color="#16a34a" />
+                                <Brain size={28} color={colors.successBorder} />
                             </View>
 
                             <Text style={styles.cardTitleGreen}>Understand & Learn</Text>
 
                             <View style={styles.list}>
                                 <View style={styles.listItem}>
-                                    <Check size={16} color="#15803d" />
+                                    <Check size={16} color={colors.successBorder} />
                                     <Text style={styles.listItemTextGreen}>Take comprehension quiz</Text>
                                 </View>
                                 <View style={styles.listItem}>
@@ -48,11 +52,11 @@ export function ComprehensionGate({ open, onClose, onCopy, onLearn }: Comprehens
                                     <Text style={[styles.listItemTextGreen, styles.fontMedium]}>Earn 50 points if pass (70%+)</Text>
                                 </View>
                                 <View style={styles.listItem}>
-                                    <Zap size={16} color="#15803d" />
+                                    <Zap size={16} color={colors.successBorder} />
                                     <Text style={styles.listItemTextGreen}>Get humanized answer in your style</Text>
                                 </View>
                                 <View style={styles.listItem}>
-                                    <FileText size={16} color="#15803d" />
+                                    <FileText size={16} color={colors.successBorder} />
                                     <Text style={styles.listItemTextGreen}>Bonus: Flashcards + Study Guide</Text>
                                 </View>
                             </View>
@@ -71,26 +75,26 @@ export function ComprehensionGate({ open, onClose, onCopy, onLearn }: Comprehens
 
                         <View style={styles.cardContent}>
                             <View style={styles.iconContainerRed}>
-                                <Copy size={28} color="#ef4444" />
+                                <Copy size={28} color={colors.error} />
                             </View>
 
                             <Text style={styles.cardTitleRed}>Just Copy</Text>
 
                             <View style={styles.list}>
                                 <View style={styles.listItem}>
-                                    <X size={16} color="#dc2626" />
+                                    <X size={16} color={colors.errorBorder} />
                                     <Text style={styles.listItemTextRed}>Copy without understanding</Text>
                                 </View>
                                 <View style={styles.listItem}>
-                                    <X size={16} color="#dc2626" />
+                                    <X size={16} color={colors.errorBorder} />
                                     <Text style={styles.listItemTextRed}>0 points earned</Text>
                                 </View>
                                 <View style={styles.listItem}>
-                                    <X size={16} color="#dc2626" />
+                                    <X size={16} color={colors.errorBorder} />
                                     <Text style={styles.listItemTextRed}>Plain AI text only</Text>
                                 </View>
                                 <View style={styles.listItem}>
-                                    <X size={16} color="#dc2626" />
+                                    <X size={16} color={colors.errorBorder} />
                                     <Text style={styles.listItemTextRed}>No study materials</Text>
                                 </View>
                             </View>
@@ -111,7 +115,7 @@ export function ComprehensionGate({ open, onClose, onCopy, onLearn }: Comprehens
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     container: {
         maxHeight: '95%',
     },
@@ -122,19 +126,19 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#111827',
+        color: colors.text,
         marginBottom: 4,
     },
     subtitle: {
         fontSize: 14,
-        color: '#6b7280',
+        color: colors.textMuted,
         textAlign: 'center',
     },
     cardGreen: {
         position: 'relative',
-        backgroundColor: '#f0fdf4',
+        backgroundColor: colors.successBg,
         borderWidth: 2,
-        borderColor: '#86efac',
+        borderColor: colors.successBorder, // maybe lighter like 86efac
         borderRadius: 16,
         padding: 16,
         marginBottom: 20,
@@ -142,9 +146,9 @@ const styles = StyleSheet.create({
     },
     cardRed: {
         position: 'relative',
-        backgroundColor: '#fef2f2',
+        backgroundColor: colors.errorBg,
         borderWidth: 2,
-        borderColor: '#fecaca',
+        borderColor: colors.errorBorder,
         borderRadius: 16,
         padding: 16,
         marginBottom: 10,
@@ -154,7 +158,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: -12,
         left: 16,
-        backgroundColor: '#ffffff',
+        backgroundColor: colors.surface,
         paddingHorizontal: 8,
         paddingVertical: 2,
         borderRadius: 4,
@@ -162,13 +166,13 @@ const styles = StyleSheet.create({
     badgeRecommendedText: {
         fontSize: 10,
         fontWeight: 'bold',
-        color: '#16a34a',
+        color: colors.successBorder,
     },
     badgePoints: {
         position: 'absolute',
         top: -12,
         right: 16,
-        backgroundColor: '#22c55e',
+        backgroundColor: colors.success,
         paddingHorizontal: 8,
         paddingVertical: 2,
         borderRadius: 12,
@@ -182,7 +186,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: -12,
         left: 16,
-        backgroundColor: '#ffffff',
+        backgroundColor: colors.surface,
         paddingHorizontal: 8,
         paddingVertical: 2,
         borderRadius: 4,
@@ -190,7 +194,7 @@ const styles = StyleSheet.create({
     badgeQuickText: {
         fontSize: 10,
         fontWeight: 'bold',
-        color: '#ef4444',
+        color: colors.errorBorder,
     },
     cardContent: {
         alignItems: 'center',
@@ -199,7 +203,7 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: '#dcfce7',
+        backgroundColor: colors.successBg,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 12,
@@ -208,7 +212,7 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: '#fee2e2',
+        backgroundColor: colors.errorBg,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 12,
@@ -216,13 +220,13 @@ const styles = StyleSheet.create({
     cardTitleGreen: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#15803d',
+        color: colors.successBorder,
         marginBottom: 16,
     },
     cardTitleRed: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#b91c1c',
+        color: colors.errorBorder,
         marginBottom: 16,
     },
     list: {
@@ -237,18 +241,18 @@ const styles = StyleSheet.create({
     },
     listItemTextGreen: {
         fontSize: 13,
-        color: '#15803d',
+        color: colors.successBorder,
     },
     listItemTextRed: {
         fontSize: 13,
-        color: '#dc2626',
+        color: colors.errorBorder,
     },
     fontMedium: {
         fontWeight: '600',
     },
     btnGreen: {
         width: '100%',
-        backgroundColor: '#22c55e',
+        backgroundColor: colors.success,
     },
     btnTextWhite: {
         color: '#ffffff',
@@ -256,22 +260,22 @@ const styles = StyleSheet.create({
     },
     btnRedOutline: {
         width: '100%',
-        borderColor: '#fca5a5',
+        borderColor: colors.errorBorder,
     },
     btnTextRed: {
-        color: '#dc2626',
+        color: colors.errorBorder,
         fontWeight: '600',
     },
     footer: {
         marginTop: 16,
         paddingTop: 16,
         borderTopWidth: 1,
-        borderTopColor: '#f3f4f6',
+        borderTopColor: colors.borderLight,
         alignItems: 'center',
     },
     footerText: {
         fontSize: 12,
-        color: '#6b7280',
+        color: colors.textMuted,
         textAlign: 'center',
     },
 });

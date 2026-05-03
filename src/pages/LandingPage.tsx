@@ -2,8 +2,10 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, Platform } from 'react-native';
 import { Button } from '../components/ui/Button';
 import { ArrowRight, Brain, Copy, CheckCircle, Flame } from 'lucide-react-native';
+import { useStyles } from '../theme/ThemeContext';
 
 export function LandingPage({ navigation }: any) {
+    const styles = useStyles(createStyles);
     return (
         <SafeAreaView style={styles.safeArea}>
             <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -69,10 +71,10 @@ export function LandingPage({ navigation }: any) {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#ffffff',
+        backgroundColor: colors.surface,
         paddingTop: Platform.OS === 'android' ? 25 : 0,
     },
     container: {
@@ -90,7 +92,7 @@ const styles = StyleSheet.create({
     badgeContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fef2f2',
+        backgroundColor: colors.errorBg,
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 20,
@@ -98,26 +100,26 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     badgeText: {
-        color: '#ef4444',
+        color: colors.error,
         fontWeight: '600',
         fontSize: 12,
     },
     heroTitle: {
         fontSize: 32,
         fontWeight: 'bold',
-        color: '#111827',
+        color: colors.text,
         textAlign: 'center',
     },
     heroTitleGradient: {
         fontSize: 36,
         fontWeight: 'bold',
-        color: '#4f46e5',
+        color: colors.primaryHover,
         textAlign: 'center',
         marginBottom: 16,
     },
     heroSubtitle: {
         fontSize: 16,
-        color: '#4b5563',
+        color: colors.textMuted,
         textAlign: 'center',
         marginBottom: 32,
         lineHeight: 24,
@@ -132,23 +134,23 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     howItWorksSection: {
-        backgroundColor: '#f9fafb',
+        backgroundColor: colors.background,
         paddingHorizontal: 24,
         paddingVertical: 40,
     },
     sectionTitle: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#111827',
+        color: colors.text,
         textAlign: 'center',
         marginBottom: 32,
     },
     stepCard: {
-        backgroundColor: '#ffffff',
+        backgroundColor: colors.surface,
         padding: 20,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: '#e5e7eb',
+        borderColor: colors.border,
         marginBottom: 16,
         alignItems: 'center',
         shadowColor: '#000',
@@ -161,7 +163,7 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 24,
-        backgroundColor: '#6366f1',
+        backgroundColor: colors.primaryHover,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 16,
@@ -170,7 +172,7 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 24,
-        backgroundColor: '#fee2e2',
+        backgroundColor: colors.errorBg,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 16,
@@ -179,7 +181,7 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 24,
-        backgroundColor: '#dcfce7',
+        backgroundColor: colors.successBg,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 16,
@@ -188,7 +190,7 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 24,
-        backgroundColor: '#f3e8ff',
+        backgroundColor: colors.surfaceHighlight,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 16,
@@ -201,12 +203,12 @@ const styles = StyleSheet.create({
     stepTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#111827',
+        color: colors.text,
         marginBottom: 8,
     },
     stepDesc: {
         fontSize: 14,
-        color: '#6b7280',
+        color: colors.textMuted,
         textAlign: 'center',
         lineHeight: 20,
     },

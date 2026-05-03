@@ -2,130 +2,138 @@
 // Supabase Edge Function: /submit-quiz
 // Quiz Submission + Chat Access Unlocking
 // =====================================================
-// Deploy with: supabase functions deploy submit-quiz
 
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const PASS_THRESHOLD = parseInt(Deno.env.get("PASS_THRESHOLD") ?? "70");
+function ok(payload: unknown) {
+  return new Response(JSON.stringify(payload), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    status: 200,
+  });
+}
 
-serve(async (req: Request) => {
+function decodeJwtPayload(jwt: string): Record<string, unknown> | null {
+  try {
+    const parts = jwt.split(".");
+    if (parts.length !== 3) return null;
+    const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    return JSON.parse(atob(b64));
+  } catch {
+    return null;
+  }
+}
+
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+  const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const PASS_THRESHOLD = parseInt(Deno.env.get("PASS_THRESHOLD") ?? "70", 10);
+
   try {
-    // ── 1. Validate JWT ───────────────────────────────────────
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return errorResponse(401, "Missing Authorization header");
+    // ── 1. Extract user from JWT (gateway already verified sig) ──
+    const authHeader = req.headers.get("Authorization") ?? "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return ok({ error: "Missing Authorization header" });
+    }
+    const payload = decodeJwtPayload(authHeader.slice(7));
+    const userId = payload?.sub as string | undefined;
+    if (!userId) return ok({ error: "Invalid token: could not decode sub claim" });
+
+    // ── 2. Parse body ─────────────────────────────────────────
+    let body: any;
+    try { body = await req.json(); } catch { return ok({ error: "Invalid JSON body" }); }
+    const { topic, userAnswers, questions, isRetry, answersSignature, answersPayload } = body;
+
+    if (!topic || !Array.isArray(userAnswers)) {
+      return ok({ error: "Missing required fields: topic, userAnswers" });
+    }
+    if (!answersSignature || !answersPayload) {
+      return ok({ error: "Missing secure answers payload or signature. Update your app." });
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-    if (authError || !user) {
-      return errorResponse(401, "Invalid or expired token");
+    // ── 3. Verify signature ───────────────────────────────────
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(SUPABASE_SERVICE_KEY.slice(0, 32).padEnd(32, '0'));
+    const cryptoKey = await crypto.subtle.importKey(
+      "raw", keyData, { name: "HMAC", hash: "SHA-256" }, false, ["verify"]
+    );
+    
+    // Decode base64 signature
+    const binaryString = atob(answersSignature);
+    const signatureBytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+        signatureBytes[i] = binaryString.charCodeAt(i);
     }
 
-    const userId = user.id;
+    const isValid = await crypto.subtle.verify(
+      "HMAC",
+      cryptoKey,
+      signatureBytes,
+      encoder.encode(answersPayload)
+    );
 
-    // ── 2. Parse request body ─────────────────────────────────
-    const { topic, userAnswers, questions, isRetry } = await req.json();
-
-    if (!topic || !userAnswers || !questions) {
-      return errorResponse(400, "Missing required fields: topic, userAnswers, questions");
+    if (!isValid) {
+      return ok({ error: "Invalid answers signature. Tampering detected." });
     }
 
-    if (!Array.isArray(userAnswers) || !Array.isArray(questions)) {
-      return errorResponse(400, "userAnswers and questions must be arrays");
+    const secureAnswers = JSON.parse(answersPayload);
+    // Assume we're grading the normal quiz for now. If easyQuiz, client needs to specify, or we just check length.
+    // For simplicity, we assume if userAnswers.length matches easyQuiz, it's easyQuiz, otherwise normal quiz.
+    let correctAnswersArray = secureAnswers.quiz;
+    if (userAnswers.length === secureAnswers.easyQuiz?.length && userAnswers.length !== secureAnswers.quiz?.length) {
+      correctAnswersArray = secureAnswers.easyQuiz;
     }
 
-    if (userAnswers.length !== questions.length) {
-      return errorResponse(400, "Mismatch between answers and questions count");
+    if (userAnswers.length !== correctAnswersArray.length) {
+      return ok({ error: "Mismatch between answers and questions count" });
     }
 
-    // ── 3. Calculate score server-side ────────────────────────
+    // ── 4. Score server-side ──────────────────────────────────
     let correct = 0;
-    for (let i = 0; i < questions.length; i++) {
-      if (userAnswers[i] === questions[i].correctAnswer) {
-        correct++;
-      }
+    for (let i = 0; i < correctAnswersArray.length; i++) {
+      if (userAnswers[i] === correctAnswersArray[i]) correct++;
     }
-
-    const total = questions.length;
+    const total = correctAnswersArray.length;
     const scorePercent = Math.round((correct / total) * 100);
     const passed = scorePercent >= PASS_THRESHOLD;
     const pointsEarned = passed ? (isRetry ? 30 : 50) : 0;
 
     // ── 4. Store attempt ──────────────────────────────────────
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+      auth: { persistSession: false },
+    });
+
     const { error: insertError } = await supabase
       .from("user_quiz_attempts")
-      .insert({
-        user_id: userId,
-        topic,
-        score: correct,
-        total,
-        passed,
-        points_earned: pointsEarned,
-        is_retry: isRetry ?? false,
-      });
+      .insert({ user_id: userId, topic, score: correct, total, passed, points_earned: pointsEarned, is_retry: isRetry ?? false });
 
     if (insertError) {
-      console.error("Failed to insert attempt:", insertError);
-      return errorResponse(500, "Failed to record quiz attempt");
+      return ok({ error: "Failed to record quiz attempt: " + insertError.message });
     }
 
-    // ── 5. If passed → unlock chat access for this topic ─────
+    // ── 5. Unlock chat access if passed ──────────────────────
     if (passed) {
-      const { error: upsertError } = await supabase
-        .from("chat_access")
-        .upsert({
-          user_id: userId,
-          topic,
-          unlocked: true,
-          updated_at: new Date().toISOString(),
-        });
-
-      if (upsertError) {
-        console.error("Failed to unlock chat access:", upsertError);
-        // Non-fatal: still return success, client can retry
-      }
+      await supabase.from("chat_access").upsert({
+        user_id: userId,
+        topic,
+        unlocked: true,
+        updated_at: new Date().toISOString(),
+      });
     }
 
-    // ── 6. Return result ──────────────────────────────────────
-    return new Response(
-      JSON.stringify({
-        passed,
-        score: correct,
-        total,
-        scorePercent,
-        pointsEarned,
-        passThreshold: PASS_THRESHOLD,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
+    return ok({ passed, score: correct, total, scorePercent, pointsEarned, passThreshold: PASS_THRESHOLD });
 
-  } catch (err) {
-    console.error("Unexpected error:", err);
-    return errorResponse(500, "Internal server error");
+  } catch (err: any) {
+    return ok({ error: `Unexpected: ${err?.message ?? String(err)}` });
   }
 });
-
-function errorResponse(status: number, message: string): Response {
-  return new Response(JSON.stringify({ error: message }), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-    status,
-  });
-}

@@ -4,12 +4,15 @@ import {
   Platform, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, ScrollView,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
-import { Brain } from 'lucide-react-native';
+import { useStyles, useTheme } from '../theme/ThemeContext';
+import { Brain, Sun, Moon } from 'lucide-react-native';
 
 type Mode = 'login' | 'register';
 
 export function AuthPage() {
   const { signIn, signUp } = useAuth();
+  const styles = useStyles(createStyles);
+  const { colors, isDark, toggleTheme } = useTheme();
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,8 +40,11 @@ export function AuthPage() {
         await signIn(email.trim(), password);
       } else {
         await signUp(email.trim(), password, username.trim() || undefined);
-        setSuccessMsg('Account created! Check your email to confirm, then sign in.');
+        setSuccessMsg(
+          '✉️ Check your email! We sent you a verification link. Click it to activate your account, then sign in here.'
+        );
         setMode('login');
+        setPassword('');
       }
     } catch (err: any) {
       setError(err.message ?? 'Something went wrong. Please try again.');
@@ -49,6 +55,14 @@ export function AuthPage() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      {/* Theme toggle — top right corner */}
+      <TouchableOpacity style={styles.themeToggle} onPress={toggleTheme} activeOpacity={0.7}>
+        {isDark
+          ? <Sun size={22} color={colors.text} />
+          : <Moon size={22} color={colors.text} />
+        }
+      </TouchableOpacity>
+
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -88,7 +102,7 @@ export function AuthPage() {
                   value={username}
                   onChangeText={setUsername}
                   placeholder="e.g. john_doe"
-                  placeholderTextColor="#9ca3af"
+                  placeholderTextColor={colors.textMuted}
                   autoCapitalize="none"
                 />
               </View>
@@ -101,7 +115,7 @@ export function AuthPage() {
                 value={email}
                 onChangeText={setEmail}
                 placeholder="you@example.com"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={colors.textMuted}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 autoComplete="email"
@@ -115,7 +129,7 @@ export function AuthPage() {
                 value={password}
                 onChangeText={setPassword}
                 placeholder="Min. 6 characters"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={colors.textMuted}
                 secureTextEntry
                 autoComplete={mode === 'login' ? 'password' : 'new-password'}
               />
@@ -125,6 +139,7 @@ export function AuthPage() {
               style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
               onPress={handleSubmit}
               disabled={loading}
+              activeOpacity={0.8}
             >
               {loading ? (
                 <ActivityIndicator size="small" color="#fff" />
@@ -142,6 +157,8 @@ export function AuthPage() {
                 setError(null);
                 setSuccessMsg(null);
               }}
+              activeOpacity={0.6}
+              hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}
             >
               <Text style={styles.toggleText}>
                 {mode === 'login'
@@ -159,13 +176,30 @@ export function AuthPage() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#f5f3ff',
+    backgroundColor: colors.background,
     paddingTop: Platform.OS === 'android' ? 25 : 0,
   },
   flex: { flex: 1 },
+  themeToggle: {
+    position: 'absolute',
+    top: Platform.OS === 'android' ? 36 : 16,
+    right: 20,
+    zIndex: 100,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
+  },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
@@ -179,11 +213,11 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#4f46e5',
+    backgroundColor: colors.primaryHover,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
-    shadowColor: '#4f46e5',
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.35,
     shadowRadius: 16,
@@ -192,15 +226,15 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1e1b4b',
+    color: colors.text,
     marginBottom: 4,
   },
   tagline: {
     fontSize: 14,
-    color: '#6b7280',
+    color: colors.textMuted,
   },
   card: {
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.surface,
     borderRadius: 24,
     padding: 24,
     shadowColor: '#000',
@@ -212,64 +246,64 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#111827',
+    color: colors.text,
     marginBottom: 20,
   },
   errorBanner: {
-    backgroundColor: '#fef2f2',
+    backgroundColor: colors.errorBg,
     borderRadius: 10,
     padding: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#fecaca',
+    borderColor: colors.errorBorder,
   },
-  errorText: { color: '#dc2626', fontSize: 13 },
+  errorText: { color: colors.error, fontSize: 13 },
   successBanner: {
-    backgroundColor: '#f0fdf4',
+    backgroundColor: colors.successBg,
     borderRadius: 10,
     padding: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#bbf7d0',
+    borderColor: colors.successBorder,
   },
-  successText: { color: '#16a34a', fontSize: 13 },
+  successText: { color: colors.success, fontSize: 13 },
   field: { marginBottom: 16 },
   label: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#374151',
+    color: colors.text,
     marginBottom: 6,
   },
   input: {
     height: 48,
     borderWidth: 1.5,
-    borderColor: '#e5e7eb',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 14,
     fontSize: 15,
-    color: '#111827',
-    backgroundColor: '#f9fafb',
+    color: colors.text,
+    backgroundColor: colors.surfaceHighlight,
   },
   submitBtn: {
     height: 50,
-    backgroundColor: '#4f46e5',
+    backgroundColor: colors.primaryHover,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
-    shadowColor: '#4f46e5',
+    shadowColor: colors.primaryHover,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
-  submitBtnDisabled: { opacity: 0.7 },
+  submitBtnDisabled: { opacity: 0.5 },
   submitBtnText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  toggleBtn: { marginTop: 20, alignItems: 'center' },
-  toggleText: { fontSize: 14, color: '#6b7280' },
-  toggleLink: { color: '#4f46e5', fontWeight: '600' },
+  toggleBtn: { marginTop: 24, paddingVertical: 8, alignItems: 'center' },
+  toggleText: { fontSize: 14, color: colors.textMuted },
+  toggleLink: { color: colors.primary, fontWeight: '600' },
 });

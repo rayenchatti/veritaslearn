@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useRef, useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Button } from '../ui/Button';
 import { Trophy, Star, RefreshCcw, ArrowRight, CheckCircle, XCircle, Sparkles } from 'lucide-react-native';
+import { useStyles, useTheme } from '../../theme/ThemeContext';
 
 interface QuizResultsProps {
     score: number;
@@ -20,8 +21,25 @@ export function QuizResults({
     onContinue,
     isRetry = false
 }: QuizResultsProps) {
+    const styles = useStyles(createStyles);
+    const { colors } = useTheme();
     const percentage = Math.round((score / totalQuestions) * 100);
     const passed = percentage >= 70;
+
+    // Prevent double-tap on Continue / Retry
+    const actionTakenRef = useRef(false);
+
+    const safeOnContinue = useCallback(() => {
+        if (actionTakenRef.current) return;
+        actionTakenRef.current = true;
+        onContinue();
+    }, [onContinue]);
+
+    const safeOnRetry = useCallback(() => {
+        if (!onRetry || actionTakenRef.current) return;
+        actionTakenRef.current = true;
+        onRetry();
+    }, [onRetry]);
 
     return (
         <View style={styles.container}>
@@ -58,7 +76,7 @@ export function QuizResults({
             <View style={styles.breakdownRow}>
                 {Array.from({ length: totalQuestions }).map((_, i) => (
                     <View key={i} style={[styles.dot, i < score ? styles.dotSuccess : styles.dotDanger]}>
-                        {i < score ? <CheckCircle size={20} color="#16a34a" /> : <XCircle size={20} color="#dc2626" />}
+                        {i < score ? <CheckCircle size={20} color={colors.success} /> : <XCircle size={20} color={colors.error} />}
                     </View>
                 ))}
             </View>
@@ -66,15 +84,15 @@ export function QuizResults({
             {/* Actions */}
             <View style={styles.actionsRow}>
                 {!passed && onRetry && (
-                    <Button variant="outline" onPress={onRetry} style={styles.marginRight}>
+                    <Button variant="outline" onPress={safeOnRetry} style={styles.marginRight}>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <RefreshCcw size={16} color="#4338ca" style={{ marginRight: 6 }} />
-                            <Text style={{ color: '#4338ca' }}>Try Again (30 pts)</Text>
+                            <RefreshCcw size={16} color={colors.primaryHover} style={{ marginRight: 6 }} />
+                            <Text style={{ color: colors.primaryHover }}>Try Again (30 pts)</Text>
                         </View>
                     </Button>
                 )}
                 
-                <Button onPress={onContinue} style={passed ? styles.bgSuccess : {}}>
+                <Button onPress={safeOnContinue} style={passed ? styles.bgSuccess : {}}>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <Text style={{ color: '#ffffff', fontWeight: 'bold' }}>
                             {passed ? 'View Unlocked Answer' : 'Continue Anyway'}
@@ -94,7 +112,7 @@ export function QuizResults({
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     container: {
         alignItems: 'center',
         paddingVertical: 10,
@@ -108,10 +126,10 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     iconCircleSuccess: {
-        backgroundColor: '#22c55e',
+        backgroundColor: colors.success,
     },
     iconCircleDanger: {
-        backgroundColor: '#ef4444',
+        backgroundColor: colors.error,
     },
     messageBox: {
         alignItems: 'center',
@@ -122,14 +140,14 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 8,
     },
-    textSuccess: { color: '#16a34a' },
-    textWarning: { color: '#ea580c' },
+    textSuccess: { color: colors.success },
+    textWarning: { color: '#ea580c' }, // or use colors.error
     subtitle: {
-        color: '#6b7280',
+        color: colors.textMuted,
         fontSize: 16,
     },
     scoreBox: {
-        backgroundColor: '#f9fafb',
+        backgroundColor: colors.surfaceHighlight, // usually light gray or tinted bg
         borderRadius: 16,
         padding: 24,
         width: '100%',
@@ -139,24 +157,24 @@ const styles = StyleSheet.create({
     scoreTextMain: {
         fontSize: 48,
         fontWeight: 'bold',
-        color: '#4f46e5',
+        color: colors.primary,
         marginBottom: 8,
     },
     scoreTextSub: {
-        color: '#6b7280',
+        color: colors.textMuted,
         marginBottom: 16,
     },
     pointsPill: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#dcfce7',
+        backgroundColor: colors.successBg,
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 20,
         gap: 6,
     },
     pointsPillText: {
-        color: '#15803d',
+        color: colors.successBorder, // dark green
         fontWeight: 'bold',
         fontSize: 14,
     },
@@ -174,10 +192,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     dotSuccess: {
-        backgroundColor: '#dcfce7',
+        backgroundColor: colors.successBg,
     },
     dotDanger: {
-        backgroundColor: '#fee2e2',
+        backgroundColor: colors.errorBg,
     },
     actionsRow: {
         flexDirection: 'row',
@@ -190,11 +208,11 @@ const styles = StyleSheet.create({
         marginRight: 10,
     },
     bgSuccess: {
-        backgroundColor: '#22c55e',
+        backgroundColor: colors.success,
     },
     footerText: {
         fontSize: 14,
-        color: '#6b7280',
+        color: colors.textMuted,
         textAlign: 'center',
     },
 });

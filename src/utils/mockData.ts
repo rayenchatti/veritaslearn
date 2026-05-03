@@ -50,6 +50,8 @@ export interface StudyData {
     topic: string;
     keyPoints: string[];
     flashcards: Flashcard[];
+    answersSignature?: string;
+    answersPayload?: string;
 }
 
 // Just returning the basic one so we don't blow up file sizes right now, but we keep the structure.

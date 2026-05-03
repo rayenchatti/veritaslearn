@@ -2,14 +2,25 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, Platform } from 'react-native';
 import { Header } from '../components/shared/Header';
 import { useApp } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useStyles } from '../theme/ThemeContext';
 
 export function DashboardPage() {
-    const { stats, tier, score } = useApp();
+    const { stats, score } = useApp();
+    const { user } = useAuth();
+    const styles = useStyles(createStyles);
+
+    const displayName = user?.user_metadata?.username as string
+        || user?.email?.split('@')[0]
+        || '';
 
     return (
         <SafeAreaView style={styles.safeArea}>
             <Header />
             <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+                {displayName ? (
+                    <Text style={styles.greeting}>👋 Welcome back, {displayName}!</Text>
+                ) : null}
                 <Text style={styles.pageTitle}>Dashboard</Text>
 
                 <View style={styles.statsGrid}>
@@ -19,7 +30,7 @@ export function DashboardPage() {
                     </View>
                     <View style={styles.statCard}>
                         <Text style={styles.statValue}>{stats.quizPassRate}%</Text>
-                        <Text style={styles.statLabel}>Avg Quiz Score</Text>
+                        <Text style={styles.statLabel}>Quiz Pass Rate</Text>
                     </View>
                     <View style={styles.statCard}>
                         <Text style={styles.statValue}>{stats.currentStreak} 🔥</Text>
@@ -29,37 +40,38 @@ export function DashboardPage() {
                         <Text style={styles.statValue}>{score}</Text>
                         <Text style={styles.statLabel}>Total XP</Text>
                     </View>
-                    <View style={[styles.statCard, {width: '100%'}]}>
+                    <View style={[styles.statCard, { width: '100%' }]}>
                         <Text style={styles.statValue}>{stats.aiRelianceDecrease}%</Text>
-                        <Text style={styles.statLabel}>Decrease in Copying / AI Reliance</Text>
+                        <Text style={styles.statLabel}>Decrease in AI Reliance</Text>
                     </View>
                 </View>
-                
+
                 <View style={styles.placeholderChart}>
                     <Text style={styles.placeholderTitle}>Learning Progress Over Time</Text>
-                    <Text style={styles.placeholderSubtitle}>Charts will be implemented in future phase</Text>
+                    <Text style={styles.placeholderSubtitle}>Charts coming in a future update</Text>
                 </View>
             </ScrollView>
         </SafeAreaView>
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#ffffff',
+        backgroundColor: colors.surface,
         paddingTop: Platform.OS === 'android' ? 25 : 0,
     },
-    container: {
-        flex: 1,
-    },
-    content: {
-        padding: 16,
+    container: { flex: 1 },
+    content: { padding: 16 },
+    greeting: {
+        fontSize: 14,
+        color: colors.textMuted,
+        marginBottom: 4,
     },
     pageTitle: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#111827',
+        color: colors.text,
         marginBottom: 20,
     },
     statsGrid: {
@@ -71,42 +83,42 @@ const styles = StyleSheet.create({
     },
     statCard: {
         width: '48%',
-        backgroundColor: '#f9fafb',
+        backgroundColor: colors.surfaceHighlight,
         borderRadius: 16,
         padding: 16,
         borderWidth: 1,
-        borderColor: '#e5e7eb',
+        borderColor: colors.borderLight,
         alignItems: 'center',
     },
     statValue: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#4f46e5',
+        color: colors.primaryHover,
         marginBottom: 4,
     },
     statLabel: {
         fontSize: 12,
-        color: '#6b7280',
+        color: colors.textMuted,
         textAlign: 'center',
     },
     placeholderChart: {
         height: 200,
-        backgroundColor: '#f3f4f6',
+        backgroundColor: colors.background,
         borderRadius: 16,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#e5e7eb',
+        borderColor: colors.border,
         borderStyle: 'dashed',
     },
     placeholderTitle: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: '#4b5563',
+        color: colors.text,
         marginBottom: 8,
     },
     placeholderSubtitle: {
         fontSize: 12,
-        color: '#9ca3af',
+        color: colors.textMuted,
     },
 });
